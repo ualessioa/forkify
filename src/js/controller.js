@@ -18,11 +18,17 @@ const timeout = function (s) {
 ///////////////////////////////////////
 async function showRecipe() {
   try {
+    //we get the id from the url to insert it in the fetch function
+    const id = window.location.hash;
+
+    // guard clause to prevent error when loading the page without an id
+    if (!id) return;
+
     //render spinner
     renderSpinner(recipeContainer);
 
     const response = await fetch(
-      `https://forkify-api.herokuapp.com/api/v2/recipes/5ed6604591c37cdc054bcc3e `
+      `https://forkify-api.herokuapp.com/api/v2/recipes/${id.slice(1)} `
     );
     const responseJson = await response.json();
     // throwing an error for 400 errors in the fetch
@@ -169,7 +175,6 @@ async function showRecipe() {
 }
 
 // render loading spinner
-
 function renderSpinner(parentEl) {
   const html = `<div class="spinner">
   <svg>
@@ -181,4 +186,12 @@ function renderSpinner(parentEl) {
   parentEl.insertAdjacentHTML("afterbegin", html);
 }
 
-showRecipe();
+// //listen to hashchange
+// window.addEventListener("hashchange", showRecipe);
+// //listen to page loading
+// window.addEventListener("load", showRecipe);
+
+//as opposed to adding event listeners one by one we can have a list of events and loop them over
+["hashchange", "load"].forEach((event) => {
+  window.addEventListener(event, showRecipe);
+});
