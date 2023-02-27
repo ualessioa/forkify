@@ -33,7 +33,7 @@ async function controlRecipes() {
     recipeView.renderSpinner();
 
     //loading the recipe using the model
-    await model.loadRecipe(id);
+    await model.loadRecipe(id.slice(1));
     const recipe = await model.state.recipe;
 
     //rendering recipe

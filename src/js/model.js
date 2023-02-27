@@ -8,9 +8,7 @@ export const state = {
 
 export async function loadRecipe(id) {
   try {
-    const response = await fetch(`${API_URL}${id}`);
-    const responseJson = await response.json();
-    console.log(responseJson);
+    const responseJson = await getJSON(API_URL + id);
     //reformatting recipe
     const { recipe } = responseJson.data;
     state.recipe = {
