@@ -1,26 +1,47 @@
 //importing everything in the model as model
 import * as model from "./model.js";
 
-// import the view from recipeView.js
+// import the views
 import recipeView from "./views/recipeView.js";
+import searchView from "./views/searchView.js";
+import resultsView from "./views/resultsView.js";
 
 // importing core-js and polyfilling and fractional libraries
 import "core-js/stable";
 import "regenerator-runtime/runtime";
 
-const recipeContainer = document.querySelector(".recipe");
-
-const timeout = function (s) {
-  return new Promise(function (_, reject) {
-    setTimeout(function () {
-      reject(new Error(`Request took too long! Timeout after ${s} second`));
-    }, s * 1000);
-  });
-};
-
 // https://forkify-api.herokuapp.com/v2
 
 ///////////////////////////////////////
+
+//implementing the publisher-subscriber pattern
+// here the subscriber part
+function init() {
+  recipeView.addHandlerRender(controlRecipes);
+  searchView.addHandlerSearch(controlSearchResults);
+}
+init();
+
+// publisher-subscriber pattern also here
+async function controlSearchResults() {
+  try {
+    // insert the loading spinner
+    resultsView.renderSpinner();
+
+    // get the search query
+    const query = searchView.getQuery();
+    if (!query) return;
+
+    //load search results
+    await model.loadSearchResults(query);
+
+    // render search results with pagination
+    resultsView.render(model.getSearchResultsPage());
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 async function controlRecipes() {
   try {
     //we get the id from the url to insert it in the fetch function
@@ -33,27 +54,17 @@ async function controlRecipes() {
     recipeView.renderSpinner();
 
     //loading the recipe using the model
-    await model.loadRecipe(id.slice(1));
+    await model.loadRecipe(id.slice(2));
     const recipe = await model.state.recipe;
 
     //rendering recipe
     recipeView.render(recipe);
   } catch (error) {
-    console.error(error);
+    recipeView.renderError();
   }
 }
 
-// //listen to hashchange
-// window.addEventListener("hashchange", controlRecipes);
-// //listen to page loading
-// window.addEventListener("load", controlRecipes);
-
-//as opposed to adding event listeners one by one we can have a list of events and loop them over
-["hashchange", "load"].forEach((event) => {
-  window.addEventListener(event, controlRecipes);
-});
-
-// reloads localhost page with changes automatically
+// reloads localhost page with changes automatically to be deleted
 if (module.hot) {
   module.hot.accept();
 }
