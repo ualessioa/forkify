@@ -5,10 +5,12 @@ import * as model from "./model.js";
 import recipeView from "./views/recipeView.js";
 import searchView from "./views/searchView.js";
 import resultsView from "./views/resultsView.js";
+import paginationView from "./views/paginationView.js";
 
 // importing core-js and polyfilling and fractional libraries
 import "core-js/stable";
 import "regenerator-runtime/runtime";
+import { getJSON } from "./helpers.js";
 
 // https://forkify-api.herokuapp.com/v2
 
@@ -18,7 +20,9 @@ import "regenerator-runtime/runtime";
 // here the subscriber part
 function init() {
   recipeView.addHandlerRender(controlRecipes);
+  recipeView.addHandlerUpdateServings(controlServings);
   searchView.addHandlerSearch(controlSearchResults);
+  paginationView.addHandlerCLick(controlPagination);
 }
 init();
 
@@ -35,8 +39,14 @@ async function controlSearchResults() {
     //load search results
     await model.loadSearchResults(query);
 
-    // render search results with pagination
+    // render search results
     resultsView.render(model.getSearchResultsPage());
+
+    //bonus alessio code to reset the page of the search results
+    model.state.search.page = 1;
+
+    //rendering initial pagination for results
+    paginationView.render(model.state.search);
   } catch (error) {
     console.error(error);
   }
@@ -54,7 +64,7 @@ async function controlRecipes() {
     recipeView.renderSpinner();
 
     //loading the recipe using the model
-    await model.loadRecipe(id.slice(2));
+    await model.loadRecipe(id.slice(1));
     const recipe = await model.state.recipe;
 
     //rendering recipe
@@ -62,6 +72,19 @@ async function controlRecipes() {
   } catch (error) {
     recipeView.renderError();
   }
+}
+
+function controlPagination(goToPage) {
+  // re render results and buttons after click on pagination button
+  resultsView.render(model.getSearchResultsPage(goToPage));
+  paginationView.render(model.state.search);
+}
+
+function controlServings(newServings) {
+  // update the recipe servings (in the state)
+  model.updateServings(newServings);
+  // update the recipe view
+  recipeView.render(model.state.recipe);
 }
 
 // reloads localhost page with changes automatically to be deleted
