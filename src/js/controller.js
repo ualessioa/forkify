@@ -6,6 +6,7 @@ import recipeView from "./views/recipeView.js";
 import searchView from "./views/searchView.js";
 import resultsView from "./views/resultsView.js";
 import paginationView from "./views/paginationView.js";
+import bookmarksView from "./views/bookmarksView.js";
 
 // importing core-js and polyfilling and fractional libraries
 import "core-js/stable";
@@ -19,8 +20,10 @@ import { getJSON } from "./helpers.js";
 //implementing the publisher-subscriber pattern
 // here the subscriber part
 function init() {
+  bookmarksView.addHandlerRender(controlBookmarks);
   recipeView.addHandlerRender(controlRecipes);
   recipeView.addHandlerUpdateServings(controlServings);
+  recipeView.addHandlerAddBookmark(controlAddBookmark);
   searchView.addHandlerSearch(controlSearchResults);
   paginationView.addHandlerCLick(controlPagination);
 }
@@ -42,9 +45,6 @@ async function controlSearchResults() {
     // render search results
     resultsView.render(model.getSearchResultsPage());
 
-    //bonus alessio code to reset the page of the search results
-    model.state.search.page = 1;
-
     //rendering initial pagination for results
     paginationView.render(model.state.search);
   } catch (error) {
@@ -59,6 +59,10 @@ async function controlRecipes() {
 
     // guard clause to prevent error when loading the page without an id
     if (!id) return;
+
+    // // update results view to insert active link
+    resultsView.update(model.getSearchResultsPage());
+    bookmarksView.update(model.state.bookmarks);
 
     //render spinner
     recipeView.renderSpinner();
@@ -84,7 +88,27 @@ function controlServings(newServings) {
   // update the recipe servings (in the state)
   model.updateServings(newServings);
   // update the recipe view
-  recipeView.render(model.state.recipe);
+  // moving from rerendering the whole container to rerendering only the content that changes for better performance
+  // recipeView.render(model.state.recipe);
+  recipeView.update(model.state.recipe);
+}
+
+function controlAddBookmark() {
+  // add or remove bookmark
+  if (!model.state.recipe.bookmarked) {
+    model.addBookmark(model.state.recipe);
+  } else {
+    model.removeBookmark(model.state.recipe.id);
+  }
+  // update recipe view
+  recipeView.update(model.state.recipe);
+
+  // render bookmarks
+  bookmarksView.render(model.state.bookmarks);
+}
+
+function controlBookmarks() {
+  bookmarksView.render(model.state.bookmarks);
 }
 
 // reloads localhost page with changes automatically to be deleted

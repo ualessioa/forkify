@@ -10,6 +10,7 @@ export const state = {
     page: 1,
     resultsPerPage: RESULTS_PER_PAGE,
   },
+  bookmarks: [],
 };
 
 export async function loadRecipe(id) {
@@ -27,6 +28,13 @@ export async function loadRecipe(id) {
       servings: recipe.servings,
       sourceUrl: recipe.source_url,
     };
+
+    // checking if a recipe is already been bookmarked before
+    if (state.bookmarks.some((bookmark) => bookmark.id === id)) {
+      state.recipe.bookmarked = true;
+    } else {
+      state.recipe.bookmarked = false;
+    }
   } catch (error) {
     throw error;
   }
@@ -45,6 +53,8 @@ export async function loadSearchResults(query) {
         publisher: recipe.publisher,
       };
     });
+    //bonus alessio code to reset the page of the search results
+    state.search.page = 1;
   } catch (error) {
     throw error;
   }
@@ -68,3 +78,37 @@ export function updateServings(newServings) {
 
   state.recipe.servings = newServings;
 }
+
+//internal function (no need to export) that will make the data persist in the local storage
+function persistBookmarks() {
+  localStorage.setItem("bookmarks", JSON.stringify(state.bookmarks));
+}
+
+function init() {
+  const storage = localStorage.getItem("bookmarks");
+  if (storage) state.bookmarks = JSON.parse(storage);
+
+  console.log(state.bookmarks);
+}
+
+export function addBookmark(recipe) {
+  // add bookmark
+  state.bookmarks.push(recipe);
+  // mark current recipe as bookmark
+  if (recipe.id === state.recipe.id) {
+    state.recipe.bookmarked = true;
+  }
+  persistBookmarks();
+}
+
+export function removeBookmark(id) {
+  state.bookmarks.splice(
+    state.bookmarks.findIndex((el) => el.id === id),
+    1
+  );
+
+  if (id === state.recipe.id) state.recipe.bookmarked = false;
+  persistBookmarks();
+}
+
+init();
