@@ -7,11 +7,12 @@ import searchView from "./views/searchView.js";
 import resultsView from "./views/resultsView.js";
 import paginationView from "./views/paginationView.js";
 import bookmarksView from "./views/bookmarksView.js";
+import addRecipeView from "./views/addRecipeView.js";
+import { MODAL_CLOSE_SEC } from "./config.js";
 
 // importing core-js and polyfilling and fractional libraries
 import "core-js/stable";
 import "regenerator-runtime/runtime";
-import { getJSON } from "./helpers.js";
 
 // https://forkify-api.herokuapp.com/v2
 
@@ -26,6 +27,7 @@ function init() {
   recipeView.addHandlerAddBookmark(controlAddBookmark);
   searchView.addHandlerSearch(controlSearchResults);
   paginationView.addHandlerCLick(controlPagination);
+  addRecipeView.addHandlerUpload(controlAddRecipe);
 }
 init();
 
@@ -109,6 +111,28 @@ function controlAddBookmark() {
 
 function controlBookmarks() {
   bookmarksView.render(model.state.bookmarks);
+}
+
+async function controlAddRecipe(newRecipe) {
+  try {
+    addRecipeView.renderSpinner();
+    await model.uploadRecipe(newRecipe);
+    recipeView.render(model.state.recipe);
+    bookmarksView.render(model.state.bookmarks);
+
+    //changing id in url
+    window.history.pushState(null, "", `#${model.state.recipe.id}`);
+    addRecipeView.renderMessage();
+    setTimeout(() => {
+      addRecipeView.hideModal();
+      setTimeout(() => {
+        // bonus alessio code to reset the form after one immission
+        addRecipeView.render();
+      }, 1000);
+    }, MODAL_CLOSE_SEC * 1000);
+  } catch (error) {
+    addRecipeView.renderError(error.message);
+  }
 }
 
 // reloads localhost page with changes automatically to be deleted
